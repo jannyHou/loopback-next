@@ -162,6 +162,9 @@ export type Fields<MT = AnyObject> = {[P in keyof MT]?: boolean};
  * Example:
  * `{relation: 'aRelationName', scope: {<AFilterObject>}}`
  */
+
+// The entity type provided for the scope filter is the source model
+// while it should be the target(related) model
 export interface Inclusion<MT extends object = AnyObject> {
   relation: string;
   scope?: Filter<MT>;

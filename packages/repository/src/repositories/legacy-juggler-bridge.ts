@@ -28,6 +28,7 @@ import {
 } from '../relations';
 import {resolveType} from '../type-resolver';
 import {EntityCrudRepository} from './repository';
+import * as utils from 'util';
 
 export namespace juggler {
   export import DataSource = legacy.DataSource;
@@ -77,6 +78,7 @@ export function ensurePromise<T>(p: legacy.PromiseOrVoid<T>): Promise<T> {
 export class DefaultCrudRepository<T extends Entity, ID>
   implements EntityCrudRepository<T, ID> {
   modelClass: juggler.PersistedModelClass;
+  _inclusionHandler: {[relation: string]: Function} = {};
 
   /**
    * Constructor of DefaultCrudRepository
@@ -234,13 +236,49 @@ export class DefaultCrudRepository<T extends Entity, ID>
   }
 
   async findById(id: ID, filter?: Filter<T>, options?: Options): Promise<T> {
+    // advanced discussion: cache the related items
+    const relatedItems = {} as AnyObject;
+    if (filter && filter.include) {
+      for (let i of filter.include) {
+        relatedItems[i.relation] = await this._fetchIncludedItems(
+          i.relation,
+          id,
+          i.scope,
+        );
+      }
+      delete filter.include;
+    }
+
     const model = await ensurePromise(
       this.modelClass.findById(id, filter as legacy.Filter, options),
     );
     if (!model) {
       throw new EntityNotFoundError(this.entityClass, id);
     }
+    // console.log(`related items: ${utils.inspect(relatedItems, {depth: 3})}`);
+    // console.log(`model: ${utils.inspect(model, {depth: 3})}`);
+
+    Object.assign(model, relatedItems);
     return this.toEntity(model);
+  }
+
+  async _fetchIncludedItems(
+    relation: string,
+    id: ID,
+    filter?: Filter<AnyObject>,
+  ) {
+    const handler = this._inclusionHandler[relation];
+    if (!handler) {
+      throw new Error('Fetch included items is not supported');
+    }
+    const includedItems = await handler(id, filter);
+    console.log(
+      `legacy-juggler-bridge fetch includedItems : ${utils.inspect(
+        includedItems,
+        {depth: 3},
+      )}`,
+    );
+    return includedItems;
   }
 
   update(entity: T, options?: Options): Promise<void> {
