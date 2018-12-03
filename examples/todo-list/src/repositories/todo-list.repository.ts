@@ -12,7 +12,6 @@ import {
 } from '@loopback/repository';
 import {Todo, TodoList} from '../models';
 import {TodoRepository} from './todo.repository';
-import {InclusionHandlerFactory} from '@loopback/repository';
 
 export class TodoListRepository extends DefaultCrudRepository<
   TodoList,
@@ -34,16 +33,10 @@ export class TodoListRepository extends DefaultCrudRepository<
       todoRepositoryGetter,
     );
 
-    // to save time the fk name `todoListId` is provided here as a parameter,
-    // but should be calculated in the inclusion handler factory,
-    // details see my comment in the inclusion.ts file
-
-    const todoHandler = InclusionHandlerFactory<
-      Todo,
-      typeof Todo.prototype.id,
-      typeof TodoList.prototype.id
-    >(todoRepositoryGetter, 'todoListId');
-    this._inclusionHandler.todos = todoHandler;
+    this._inclusionHandler.registerHandler<Todo, typeof Todo.prototype.id>(
+      'todos',
+      todoRepositoryGetter,
+    );
   }
 
   public findByTitle(title: string) {

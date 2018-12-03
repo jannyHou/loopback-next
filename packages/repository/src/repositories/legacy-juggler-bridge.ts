@@ -29,6 +29,7 @@ import {
 import {resolveType} from '../type-resolver';
 import {EntityCrudRepository} from './repository';
 import * as utils from 'util';
+import {InclusionHandler} from './inclusion';
 
 export namespace juggler {
   export import DataSource = legacy.DataSource;
@@ -78,7 +79,7 @@ export function ensurePromise<T>(p: legacy.PromiseOrVoid<T>): Promise<T> {
 export class DefaultCrudRepository<T extends Entity, ID>
   implements EntityCrudRepository<T, ID> {
   modelClass: juggler.PersistedModelClass;
-  _inclusionHandler: {[relation: string]: Function} = {};
+  _inclusionHandler: InclusionHandler<T, ID>;
 
   /**
    * Constructor of DefaultCrudRepository
@@ -102,6 +103,7 @@ export class DefaultCrudRepository<T extends Entity, ID>
     );
 
     this.setupPersistedModel(definition);
+    this._inclusionHandler = new InclusionHandler(this);
   }
 
   // Create an internal legacy Model attached to the datasource
@@ -267,7 +269,7 @@ export class DefaultCrudRepository<T extends Entity, ID>
     id: ID,
     filter?: Filter<AnyObject>,
   ) {
-    const handler = this._inclusionHandler[relation];
+    const handler = this._inclusionHandler.findHandler(relation);
     if (!handler) {
       throw new Error('Fetch included items is not supported');
     }
