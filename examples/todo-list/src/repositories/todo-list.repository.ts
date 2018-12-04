@@ -32,6 +32,11 @@ export class TodoListRepository extends DefaultCrudRepository<
       'todos',
       todoRepositoryGetter,
     );
+
+    this._inclusionHandler.registerHandler<Todo, typeof Todo.prototype.id>(
+      'todos',
+      todoRepositoryGetter,
+    );
   }
 
   public findByTitle(title: string) {
