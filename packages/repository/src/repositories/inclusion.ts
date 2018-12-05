@@ -11,6 +11,7 @@ import {
   RelationMetadata,
   RelationType,
   constrainWhere,
+  juggler,
 } from '../';
 import {AnyObject} from '..';
 import {DefaultCrudRepository} from './legacy-juggler-bridge';
@@ -44,7 +45,7 @@ export class InclusionHandler<SE extends Entity, SID> {
     const self = this;
 
     async function fetchIncludedItems(
-      fk: SID,
+      fks: SID[],
       filter?: Filter<TE>,
     ): Promise<TE[]> {
       const targetRepo = await targetRepoGetter();
@@ -53,11 +54,12 @@ export class InclusionHandler<SE extends Entity, SID> {
       );
       filter = filter || {};
       filter.where = self.buildConstrainedWhere<TE>(
-        fk,
+        fks,
         filter.where || {},
         relationDef,
       );
-      // console.log(`inclusion filter: ${inspect(filter)}`);
+      console.log(`inclusion filter: ${inspect(filter)}`);
+
       return await targetRepo.find(filter);
     }
   }
@@ -71,13 +73,13 @@ export class InclusionHandler<SE extends Entity, SID> {
   }
 
   buildConstrainedWhere<TE extends Entity>(
-    id: SID,
+    ids: SID[],
     whereFilter: Where<TE>,
     relationDef: ResolvedRelationMetadata,
   ): Where<TE> {
     const keyPropName: string = relationDef.keyTo;
     const where: AnyObject = {};
-    where[keyPropName] = id;
+    where[keyPropName] = {inq: ids};
     return constrainWhere(whereFilter, where as Where<TE>);
   }
 

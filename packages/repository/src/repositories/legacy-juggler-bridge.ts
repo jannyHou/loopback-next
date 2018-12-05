@@ -244,7 +244,7 @@ export class DefaultCrudRepository<T extends Entity, ID>
       for (let i of filter.include) {
         relatedItems[i.relation] = await this._fetchIncludedItems(
           i.relation,
-          id,
+          [id],
           i.scope,
         );
       }
@@ -260,20 +260,20 @@ export class DefaultCrudRepository<T extends Entity, ID>
     // console.log(`related items: ${utils.inspect(relatedItems, {depth: 3})}`);
     // console.log(`model: ${utils.inspect(model, {depth: 3})}`);
 
-    Object.assign(model, relatedItems);
-    return this.toEntity(model);
+    return Object.assign(this.toEntity(model), relatedItems);
+    // return this.toEntity(model);
   }
 
   async _fetchIncludedItems(
     relation: string,
-    id: ID,
+    ids: ID[],
     filter?: Filter<AnyObject>,
   ) {
     const handler = this._inclusionHandler.findHandler(relation);
     if (!handler) {
       throw new Error('Fetch included items is not supported');
     }
-    const includedItems = await handler(id, filter);
+    const includedItems = await handler(ids, filter);
     console.log(
       `legacy-juggler-bridge fetch includedItems : ${utils.inspect(
         includedItems,

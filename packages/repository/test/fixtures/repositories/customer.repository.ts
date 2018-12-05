@@ -31,5 +31,9 @@ export class CustomerRepository extends DefaultCrudRepository<
       'orders',
       orderRepositoryGetter,
     );
+    this._inclusionHandler.registerHandler<Order, typeof Order.prototype.id>(
+      'orders',
+      orderRepositoryGetter,
+    );
   }
 }
